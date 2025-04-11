@@ -1,0 +1,83 @@
+import time
+import board
+import pulseio
+import digitalio
+import analogio
+
+trig_pin = digitalio.DigitalInOut(board.D12)
+trig_pin.direction = digitalio.Direction.OUTPUT
+
+echo_pin = pulseio.PulseIn(board.D13, maxlen=1)
+echo_pin.pause()
+
+duration = 0
+distance_cm = 0
+
+motor_1_pwm = analogio.PWMOut(board.D10)
+motor_1_pwm.frequency = 1000
+motor_1_pwm.duty_cycle = 65535
+
+motor_2_pwm = analogio.PWMOut(board.D5)
+motor_2_pwm.frequency = 1000
+motor_2_pwm.duty_cycle = 65535
+
+motor_1_1 = digitalio.DigitalInOut(board.D9)
+motor_1_1.direction = digitalio.Direction.OUTPUT
+
+motor_1_2 = digitalio.DigitalInOut(board.D8)
+motor_1_2.direction = digitalio.Direction.OUTPUT
+
+motor_2_1 = digitalio.DigitalInOut(board.D7)
+motor_2_1.direction = digitalio.Direction.OUTPUT
+
+motor_2_2 = digitalio.DigitalInOut(board.D6)
+motor_2_2.direction = digitalio.Direction.OUTPUT
+
+sensor_1 = digitalio.DigitalInOut(board.A1)
+sensor_1.direction = digitalio.Direction.INPUT
+
+sensor_2 = digitalio.DigitalInOut(board.A0)
+sensor_2.direction = digitalio.Direction.INPUT
+
+def get_distance_cm():
+    trig_pin.value = False
+    time.sleep(0.000002)
+    trig_pin.value = True
+    time.sleep(0.00001)
+    trig_pin.value = False
+    duration = pulseio.wait_for_pulse_high(echo_pin)
+    distance_cm = duration * 0.034 / 2
+    return distance_cm
+
+while True:
+    distance_cm = get_distance_cm()
+    print("Distance (cm): ", distance_cm)
+    motor_1_pwm.duty_cycle = 65535
+    motor_2_pwm.duty_cycle = 65535
+    
+    if distance_cm >= 20:
+        if sensor_1.value == False and sensor_2.value == True:
+            motor_1_1.value = False
+            motor_1_2.value = True
+            motor_2_1.value = False
+            motor_2_2.value = True
+        elif sensor_2.value == False and sensor_1.value == True:
+            motor_1_1.value = True
+            motor_1_2.value = False
+            motor_2_1.value = True
+            motor_2_2.value = False
+        elif sensor_2.value == False and sensor_1.value == False:
+            motor_1_1.value = True
+            motor_1_2.value = False
+            motor_2_1.value = False
+            motor_2_2.value = True
+        elif sensor_2.value == True and sensor_1.value == True:
+            motor_1_1.value = False
+            motor_1_2.value = False
+            motor_2_1.value = False
+            motor_2_2.value = False
+    else:
+        motor_1_1.value = False
+        motor_1_2.value = False
+        motor_2_1.value = False
+        motor_2_2.value = False

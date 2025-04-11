@@ -1,0 +1,101 @@
+from machine import Pin, PWM
+from hcsr04 import HCSR04
+from time import sleep_ms
+from BlynkLib import Blynk
+
+# Initialize the ultrasonic sensor
+trig = Pin(2, Pin.OUT)
+echo = Pin(0, Pin.IN)
+sensor = HCSR04(trig, echo)
+
+# Initialize the motor driver pins
+M1A = PWM(Pin(5), freq=500, duty=0)
+M1B = PWM(Pin(4), freq=500, duty=0)
+M2A = PWM(Pin(0), freq=500, duty=0)
+M2B = PWM(Pin(14), freq=500, duty=0)
+
+# Initialize the Blynk app
+auth = "NGrgw5qxaxls0QdwiXw2VB45HnSNvNfP"
+wifi_ssid = "robo"
+wifi_pass = "11111111"
+blynk = Blynk(auth, wifi_ssid, wifi_pass, server='blynk.cloud', port=80)
+
+# Define the motor control functions
+def forward():
+    M1A.duty(1023)
+    M1B.duty(0)
+    M2A.duty(1023)
+    M2B.duty(0)
+
+def backward():
+    M1A.duty(0)
+    M1B.duty(1023)
+    M2A.duty(0)
+    M2B.duty(1023)
+
+def left():
+    M1A.duty(0)
+    M1B.duty(1023)
+    M2A.duty(1023)
+    M2B.duty(0)
+
+def right():
+    M1A.duty(1023)
+    M1B.duty(0)
+    M2A.duty(0)
+    M2B.duty(1023)
+
+def stop():
+    M1A.duty(0)
+    M1B.duty(0)
+    M2A.duty(0)
+    M2B.duty(0)
+
+# Define the Blynk virtual pin functions
+@blynk.on("V0")
+def v0_handler(value):
+    forward()
+
+@blynk.on("V1")
+def v1_handler(value):
+    backward()
+
+@blynk.on("V2")
+def v2_handler(value):
+    left()
+
+@blynk.on("V3")
+def v3_handler(value):
+    right()
+
+@blynk.on("V4")
+def v4_handler(value):
+    stop()
+
+@blynk.on("V7")
+def v7_handler(value):
+    if value[0] == '1':
+        servo1.duty(1023)
+    else:
+        servo1.duty(0)
+
+# Main loop
+while True:
+    # Read the distance from the ultrasonic sensor
+    distanceCm = sensor.distance_cm()
+
+    # Update the Blynk virtual pin with the distance value
+    blynk.virtual_write(6, distanceCm)
+
+    # If the obstacle avoidance mode is enabled and an obstacle is detected,
+    # stop the motors and then turn left and forward to avoid the obstacle
+    if blynk.virtual_read(7):
+        if distanceCm < 20:
+            stop()
+            sleep_ms(300)
+            left()
+            sleep_ms(1840)
+            forward()
+
+    # Process Blynk app events
+    blynk.run()

@@ -1,0 +1,96 @@
+import time
+from pyfirmata import Arduino, util
+
+board = Arduino('/dev/ttyACM0')
+
+trig_pin = 12
+echo_pin = 13
+
+duration = 0
+distance_cm = 0
+distance_L = 0
+distance_R = 0
+distance_f = 30
+
+servo_pin = 11
+myservo = board.get_pin(f'servo:{servo_pin}:s')
+
+board.digital[trig_pin].mode = 1
+board.digital[echo_pin].mode = 0
+
+board.digital[9].mode = 1
+board.digital[8].mode = 1
+board.digital[7].mode = 1
+board.digital[6].mode = 1
+board.analog[10].mode = 3
+board.analog[5].mode = 3
+board.analog[A1].mode = 0
+board.analog[A0].mode = 0
+
+def ultrasonic_read():
+    board.digital[trig_pin].write(0)
+    time.sleep(0.000002)
+    board.digital[trig_pin].write(1)
+    time.sleep(0.00001)
+    duration = board.digital[echo_pin].pulse_in(1)
+    distance_cm = duration / 29 / 2
+    return distance_cm
+
+def check_side():
+    board.digital[9].write(0)
+    board.digital[8].write(0)
+    board.digital[7].write(0)
+    board.digital[6].write(0)
+    time.sleep(0.1)
+    for angle in range(90, 181, 5):
+        myservo.write(angle)
+    time.sleep(0.5)
+    distance_L = ultrasonic_read()
+    time.sleep(0.3)
+    for angle in range(180, -1, -5):
+        myservo.write(angle)
+    time.sleep(0.5)
+    distance_R = ultrasonic_read()
+    time.sleep(0.3)
+    for angle in range(0, 91, 5):
+        myservo.write(angle)
+    time.sleep(0.5)
+    compare_distance(distance_L, distance_R)
+
+def compare_distance(distance_L, distance_R):
+    if distance_L > distance_R:
+        board.digital[9].write(1)
+        board.digital[8].write(0)
+        board.digital[7].write(1)
+        board.digital[6].write(0)
+        time.sleep(0.3)
+    elif distance_R > distance_L:
+        board.digital[9].write(0)
+        board.digital[8].write(1)
+        board.digital[7].write(0)
+        board.digital[6].write(1)
+        time.sleep(0.3)
+    else:
+        board.digital[9].write(0)
+        board.digital[8].write(1)
+        board.digital[7].write(1)
+        board.digital[6].write(0)
+        time.sleep(0.5)
+        board.digital[9].write(1)
+        board.digital[8].write(0)
+        board.digital[7].write(1)
+        board.digital[6].write(0)
+        time.sleep(0.5)
+
+while True:
+    distance_f = ultrasonic_read()
+    print(f"S={distance_f}")
+    if distance_f > 25:
+        board.digital[9].write(1)
+        board.digital[8].write(0)
+        board.digital[7].write(0)
+        board.digital[6].write(1)
+    else:
+        check_side()
+
+

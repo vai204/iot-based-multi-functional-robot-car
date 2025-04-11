@@ -1,0 +1,108 @@
+#include <Servo.h>
+const int trigPin = 12;
+const int echoPin = 13;
+
+long duration;
+float distanceCm;
+Servo myservo;
+int distance_L, distance_R, distance_f=30;
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+  pinMode(echoPin, INPUT);
+  pinMode(9, OUTPUT);
+  pinMode(8, OUTPUT);
+  pinMode(7, OUTPUT);
+  pinMode(6, OUTPUT);
+  pinMode(10, OUTPUT);
+  pinMode(5, OUTPUT);
+  pinMode(A1, INPUT);
+  pinMode(A0, INPUT);
+  myservo.attach(11);
+}
+
+void loop()
+{
+ 
+
+
+ 
+  analogWrite(10,255);
+  analogWrite(5,255);
+
+  distance_f = Ultrasonic_read();
+ Serial.print("S=");Serial.println( distanceCm);
+  if ( distance_f > 25)
+  {
+    digitalWrite(9,HIGH);
+    digitalWrite(8,LOW);
+    digitalWrite(7,LOW);
+    digitalWrite(6,HIGH);
+  }
+    else{Check_side();}
+}
+
+
+
+void Check_side(){
+    digitalWrite(9, LOW);
+    digitalWrite(8, LOW);
+    digitalWrite(7, LOW);
+    digitalWrite(6, LOW);
+    delay(100);
+ for (int angle = 90; angle <= 180; angle += 5)  {
+   myservo.write(angle); }
+    delay(500);
+    distance_L= Ultrasonic_read();
+    delay(300);
+  for (int angle = 180; angle >= 0; angle -= 5)  {
+   myservo.write(angle); }
+    delay(500);
+    distance_R = Ultrasonic_read();
+    delay(300);
+ for (int angle = 0; angle <= 90; angle += 5)  {
+   myservo.write(angle);  }
+    delay(500);
+    compareDistance();
+}
+
+
+void compareDistance(){
+       if (distance_L > distance_R){
+  digitalWrite(9,HIGH);
+    digitalWrite(8,LOW);
+    digitalWrite(7,HIGH);
+    digitalWrite(6,LOW);
+   
+   
+  delay(300);
+  }
+  else if (distance_R > distance_L){
+  digitalWrite(9,LOW);
+    digitalWrite(8,HIGH);
+    digitalWrite(7,LOW);
+    digitalWrite(6,HIGH);
+  delay(300);
+  }
+  else{
+  digitalWrite(9,LOW);
+    digitalWrite(8,HIGH);
+    digitalWrite(7,HIGH);
+    digitalWrite(6,LOW);
+  delay(500);
+  digitalWrite(9,HIGH);
+    digitalWrite(8,LOW);
+    digitalWrite(7,HIGH);
+    digitalWrite(6,LOW);
+  delay(500);
+  }
+}
+long Ultrasonic_read(){
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  distanceCm = pulseIn (echoPin, HIGH);
+  return distanceCm / 29 / 2;
+}

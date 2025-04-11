@@ -1,0 +1,164 @@
+#include <Servo.h>
+#define BLYNK_PRINT Serial
+#include <ESP8266WiFi.h>
+#include <BlynkSimpleEsp8266.h>
+
+
+const int trigPin = D4;
+const int echoPin = D0;
+
+char auth[] = "NGrgw5qxaxls0QdwiXw2VB45HnSNvNfP";
+char ssid[] = "robo";   // your ssid 
+char pass[] = "11111111"; // your pass
+
+
+long duration;
+float distanceCm;
+Servo servo1;
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(trigPin, OUTPUT); 
+  pinMode(echoPin, INPUT);
+  pinMode(D1, INPUT);
+  pinMode(D2, INPUT);
+  pinMode(D8, OUTPUT);
+  pinMode(D7, OUTPUT);
+  pinMode(D6, OUTPUT);
+  pinMode(D5, OUTPUT);
+  //servo1.attach(D3);
+  
+Blynk.begin(auth, ssid, pass, "blynk.cloud", 80);
+}
+
+void loop()
+{
+  
+  
+  
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distanceCm = duration * 0.034/2;
+  Serial.print("Distance (cm): ");
+  Serial.println(distanceCm);
+
+  Blynk.run();  
+    if (digitalRead(D3)==HIGH)
+    {
+       if (distanceCm >= 20)
+        {
+            if (digitalRead(D2)==LOW && digitalRead(D1)==HIGH)
+            {
+              digitalWrite(D8,LOW);
+              digitalWrite(D7,HIGH);
+              digitalWrite(D6,LOW);
+              digitalWrite(D5,HIGH);
+              Serial.println("left");
+            }
+           
+            if (digitalRead(D1)==LOW && digitalRead(D2)==HIGH )
+            {
+              digitalWrite(D8,HIGH);
+              digitalWrite(D7,LOW);
+              digitalWrite(D6,HIGH);
+              digitalWrite(D5,LOW);
+              Serial.println("right");
+            }
+           
+            if (digitalRead(D1)==LOW && digitalRead(D2)==LOW )
+            {
+              digitalWrite(D8,HIGH);
+              digitalWrite(D7,LOW);
+              digitalWrite(D6,LOW);
+              digitalWrite(D5,HIGH);
+              Serial.println("forward");
+            }
+           
+            if (digitalRead(D1)==HIGH && digitalRead(D2)==HIGH )
+            {
+              digitalWrite(D8, LOW);
+              digitalWrite(D7, LOW);
+              digitalWrite(D6, LOW);
+              digitalWrite(D5, LOW);
+              Serial.println("reverse");
+            }
+         }
+         else
+         {
+              digitalWrite(D8, LOW);
+              digitalWrite(D7, LOW);
+              digitalWrite(D6, LOW);
+              digitalWrite(D5, LOW);
+              delay(300);
+              digitalWrite(D8,HIGH);
+              digitalWrite(D7,LOW);
+              digitalWrite(D6,HIGH);
+              digitalWrite(D5,LOW);
+              delay(1840);
+              digitalWrite(D8,HIGH);
+              digitalWrite(D7,LOW);
+              digitalWrite(D6,LOW);
+              digitalWrite(D5,HIGH);
+         }
+      }
+      
+ Blynk.virtualWrite(V6, distanceCm);
+}
+
+
+
+
+
+BLYNK_WRITE(V0)
+{
+  
+  digitalWrite(D8,HIGH);
+  digitalWrite(D7,LOW);
+  digitalWrite(D6,LOW);
+  digitalWrite(D5,HIGH);
+}
+
+BLYNK_WRITE(V1)
+{
+  digitalWrite(D8, LOW);
+  digitalWrite(D7, HIGH);
+  digitalWrite(D6, HIGH);
+  digitalWrite(D5, LOW);
+}
+
+BLYNK_WRITE(V2)
+{
+  
+  digitalWrite(D8,HIGH);
+  digitalWrite(D7,LOW);
+  digitalWrite(D6,HIGH);
+  digitalWrite(D5,LOW);
+}
+
+BLYNK_WRITE(V3)
+{
+  
+  digitalWrite(D8,LOW);
+  digitalWrite(D7,HIGH);
+  digitalWrite(D6,LOW);
+  digitalWrite(D5,HIGH);
+}
+
+BLYNK_WRITE(V4)
+{
+  
+  digitalWrite(D8,LOW);
+  digitalWrite(D7,LOW);
+  digitalWrite(D6,LOW);
+  digitalWrite(D5,LOW);
+}
+
+BLYNK_WRITE(V7)
+{
+  digitalWrite(D3,param.asInt());
+}
